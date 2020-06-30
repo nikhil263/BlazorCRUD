@@ -1,0 +1,211 @@
+﻿@page "/customerentry"
+
+@using BlazorApp1.Data
+
+@using System.Net.Http
+@inject HttpClient Http
+
+@using Microsoft.Extensions.Logging
+
+
+<h1> ASP.NET Core BLAZOR CRUD demo for Customers</h1>
+<hr />
+<table width="100%" style="background:#05163D;color:honeydew">
+    <tr>
+        <td width="20"> </td>
+        <td>
+            <h2> Add New Customer Details</h2>
+        </td>
+        <td> </td>
+        <td align="right">
+            <button class="btn btn-info" @onclick="@AddNewCustomer">Add New Customer</button>
+        </td>
+        <td width="10"> </td>
+    </tr>
+    <tr>
+        <td colspan="2"></td>
+    </tr>
+</table>
+<hr />
+@if (showAddrow == true)
+{
+    <form>
+        <table class="form-group">
+            <tr>
+                <td>
+                    <label for="Name" class="control-label">Customer Code</label>
+                </td>
+                <td>
+                    <input type="text" class="form-control" @bind="@custObj.CustCd" />
+                </td>
+                <td width="20"> </td>
+                <td>
+                    <label for="Name" class="control-label">Customer Name</label>
+                </td>
+                <td>
+                    <input type="text" class="form-control" @bind="@custObj.CustName" />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="Email" class="control-label">Email</label>
+                </td>
+                <td>
+                    <input type="text" class="form-control" @bind="@custObj.Email" />
+                </td>
+                <td width="20"> </td>
+                <td>
+                    <label for="Name" class="control-label">Phone</label>
+                </td>
+                <td>
+                    <input type="text" class="form-control" @bind="@custObj.PhoneNo" />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="Name" class="control-label">Insert By</label>
+                </td>
+                <td>
+                    <input type="text" class="form-control" @bind="@custObj.InsertBy" />
+                </td>
+                <td width="20"> </td>
+                <td>
+                </td>
+                <td>
+                    <button type="submit" class="btn btn-success" @onclick="@AddCustomer" style="width:220px;">Save</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+}
+<table width="100%" style="background:#0A2464;color:honeydew">
+    <tr>
+        <td width="20"> </td>
+        <td>
+            <h2>Customer List</h2>
+        </td>
+
+    </tr>
+    <tr>
+        <td colspan="2"></td>
+    </tr>
+</table>
+
+
+
+
+
+
+@if (custs == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Customer Code</th>
+                <th>Customerr Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Inserted By</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var cust in custs)
+            {
+                <tr>
+                    <td>@cust.CustCd</td>
+                    <td>@cust.CustName</td>
+                    <td>@cust.Email</td>
+                    <td>@cust.PhoneNo</td>
+                    <td>@cust.InsertBy</td>
+                    <td><button class="btn btn-primary" @onclick="@(async () => await EditCustomer(cust.CustCd))" style="width:110px;">Edit</button></td>
+
+                    <td><button class="btn btn-danger" @onclick="@(async () => await DeleteCustomer(cust.CustCd))">Delete</button></td>
+                </tr>
+
+            }
+        </tbody>
+    </table>
+}
+
+
+@code {
+
+
+    private CustomerMaster[] custs;
+
+    CustomerMaster custObj = new CustomerMaster();
+
+    string ids = "0";
+    bool showAddrow = false;
+
+    bool loadFailed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ids = "0";
+        custs = await Http.GetJsonAsync<CustomerMaster[]>("/api/CustomerMasters/");
+    }
+
+
+    void AddNewCustomer()
+    {
+        ids = "0";
+        showAddrow = true;
+        custObj = new CustomerMaster();
+    }
+    // Add New Customer Details Method
+    protected async Task AddCustomer()
+    {
+        if (ids == "0")
+
+        {
+            await Http.SendJsonAsync(HttpMethod.Post, "/api/CustomerMasters/", custObj);
+                custs = await Http.GetJsonAsync<CustomerMaster[]>("/api/CustomerMasters/");
+    }
+        else
+        {
+            await Http.SendJsonAsync(HttpMethod.Put, "/api/CustomerMasters/" + custObj.CustCd, custObj);
+            custs = await Http.GetJsonAsync<CustomerMaster[]>("/api/CustomerMasters/");
+    }
+
+        showAddrow = false;
+    }
+    // Edit Method
+    protected async Task EditCustomer(string CustomerID)
+    {
+        showAddrow = true;
+
+        ids = "1";
+        //try
+        //{
+        loadFailed = false;
+        ids = CustomerID.ToString();
+        custObj = await Http.GetJsonAsync<CustomerMaster>("/api/CustomerMasters/" + CustomerID);
+
+        string s = custObj.CustCd;
+
+        showAddrow = true;
+
+        //    }
+        //catch (Exception ex)
+        //{
+        //    loadFailed = true;
+        //    Logger.LogWarning(ex, "Failed to load product {ProductId}", CustomerID);
+        //}
+    }
+    // Delte Method
+    protected async Task DeleteCustomer(string CustomerID)
+    {
+        showAddrow = false;
+
+        ids = CustomerID.ToString();
+        await Http.DeleteAsync("/api/CustomerMasters/" + CustomerID);
+
+        custs = await Http.GetJsonAsync<CustomerMaster[]>("/api/CustomerMasters/");
+    }
+
+}
